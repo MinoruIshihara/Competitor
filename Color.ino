@@ -1,9 +1,3 @@
-#include <Adafruit_TCS34725.h>
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(
-  TCS34725_INTEGRATIONTIME_2_4MS,
-  TCS34725_GAIN_60X
-);
-
 const unsigned int R_MAX = 969;
 const unsigned int G_MAX = 1024;
 const unsigned int B_MAX = 1024;

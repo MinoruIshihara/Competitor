@@ -7,18 +7,15 @@ int initSonar(){
   pinMode(ECHO_PIN, INPUT);
 }
 
-int getDistance(){
+double getDistance(){
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
 
   int intervalTime = pulseIn(ECHO_PIN, HIGH, 23071);
   delay(60);
-  float distance = (0.61 * TEMPERATURE + 331.5) * intervalTime * 0.5 / 10000;
-  return (int)distance;
-}
+  double distance = (0.61 * TEMPERATURE + 331.5) * intervalTime * 0.5 / 10000;
 
-int compenDistance(int distance){
-  if(distance > 32 || distance == 0)return 32;
+  if(distance > 31.0 || 1.0 > distance )return 31.0;
   return distance;
 }
