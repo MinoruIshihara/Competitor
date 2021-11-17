@@ -18,7 +18,7 @@ void setPos(){
   int currentTime = millis();
   
   compass.read();
-  pos.x += (currentTime - pos.prevTime) * compass.a.x;
-  pos.y += (currentTime - pos.prevTime) * compass.a.y;
+  pos.x += (currentTime - pos.prevTime) * compass.a.x / 10;
+  pos.y += (currentTime - pos.prevTime) * compass.a.y / 10;
   pos.prevTime = currentTime;
 }

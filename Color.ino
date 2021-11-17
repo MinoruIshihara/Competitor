@@ -13,9 +13,9 @@ struct RGB_STRUCT getRGB(){
   struct RGB_STRUCT rgb;
   unsigned int r, g, b, clr;
   tcs.getRawData(&r, &g, &b, &clr);
-  rgb.r = map(r, R_MIN, R_MAX, 0, 16);
-  rgb.g = map(g, G_MIN, G_MAX, 0, 16);
-  rgb.b = map(b, B_MIN, B_MAX, 0, 16);
+  rgb.r = map(r, R_MIN, R_MAX, 0, 255);
+  rgb.g = map(g, G_MIN, G_MAX, 0, 255);
+  rgb.b = map(b, B_MIN, B_MAX, 0, 255);
 
   return rgb;
 }

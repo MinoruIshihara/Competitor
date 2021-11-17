@@ -22,6 +22,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  sendRGB(getRGB());
   sendDistance(getDistance());
   sendRadian(getRadian());
   setPos();
