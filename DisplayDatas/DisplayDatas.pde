@@ -18,7 +18,7 @@ int fps = 0;
 
 void setup() {
   size(1200, 800);                                                  // 幅 1200px, 高さ 800px のウインドウを生成
-  port1 = new Serial(this, "COM5", 9600);     // Serial クラスのインスタンスを生成
+  port1 = new Serial(this, "COM3", 9600);     // Serial クラスのインスタンスを生成
   port1.clear();
   port1.bufferUntil(0x0a);                                          // LF = 0x0d までバッファ
 
@@ -33,6 +33,9 @@ void setup() {
   rect(410,  15,  380, 370);        // 左下の領域を塗りつぶす
   rect(805,  15,  380, 370);        // 左下の領域を塗りつぶす
   rect(410, 415,  380, 370);        // 左下の領域を塗りつぶす
+  
+  delay(2000);
+  port1.write('H');
 }
 
 void draw() {
@@ -177,6 +180,8 @@ void serialEvent(Serial p) {
           prevRecvTime = millis();        
         }
         mapping();
+        
+        p.write('H');
         
       }
     }

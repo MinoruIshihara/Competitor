@@ -12,19 +12,28 @@ struct POSITION_STRUCT pos;
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
+  Wire.begin();
   initSonar();
   initColorSensor();
   initMagnetic();
   initPos();
-  Serial.begin(9600);
-  Wire.begin();
+
+  //calibrationRGB()
+  //calibrationMagnetic();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  sendRGB(getRGB());
-  sendDistance(getDistance());
-  sendRadian(getRadian());
   setPos();
-  sendPos(pos);
+  
+  if(Serial.available() > 0){
+    if(Serial.read() == 'H'){
+      Serial.write('H');
+      sendRGB(getRGB());  
+      sendDistance(getDistance());
+      sendRadian(getRadian());
+      sendPos(getPos());  
+      Serial.write(0x0A);
+    }
+  }  
 }

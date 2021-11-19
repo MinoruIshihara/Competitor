@@ -7,16 +7,18 @@ void loop() {
   // put your main code here, to run repeatedly:Serial.write(1);
   static unsigned char i = 0;
   
-  unsigned char rgb = i >> 4;
   Serial.write('H');
-  Serial.write(rgb);
 
-  unsigned int rgbBits = 0;
-  rgbBits = rgbBits | (unsigned int)rgb;
-  rgbBits = rgbBits | ((unsigned int)rgb << 4);
-  rgbBits = rgbBits | ((unsigned int)rgb << 8);
+  unsigned char rgb = i >> 4;
+
+  unsigned int rBits = rgb;
+  Serial.write(rBits);
   
-  Serial.write(rgbBits);
+  unsigned int gbBits = 0;
+  gbBits = gbBits | (unsigned int)rgb;
+  gbBits = gbBits | ((unsigned int)rgb << 4);
+  
+  Serial.write(gbBits);
   
   Serial.write(i);
   Serial.write(i);
