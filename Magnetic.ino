@@ -1,6 +1,11 @@
 const int CRB_REG_M_2_5GAUSS = 0x60;   // CRB_REG_M の値 ： 地磁気センサーのスケールを +/-2.5 ガウスに設定
 const int CRA_REG_M_220HZ = 0x1C;   // CRA_REG_M の値 ： 地磁気センサのアップデートレートを 220 Hz に設定
 
+int mx_max = 0;
+int mx_min = 0;
+int my_max = 0;
+int my_min = 0;
+
 void initMagnetic()
 {
   compass.init();                 // LSM303 の初期化
@@ -28,7 +33,7 @@ void  calibrationMagnetic()
   //motors.setRightSpeed(200);
   //motors.setLeftSpeed(-200);
   
-  while(millis() - startTime < 30000){
+  while(millis() - startTime < 300000){
     compass.read();
   
     compass.m_min.x = min(compass.m_min.x, compass.m.x);

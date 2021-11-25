@@ -20,7 +20,7 @@ void setup() {
   initPos();
 
   //calibrationRGB()
-  //calibrationMagnetic();
+  calibrationMagnetic();
 }
 
 void loop() {
