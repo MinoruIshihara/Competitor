@@ -18,7 +18,7 @@ int fps = 0;
 
 void setup() {
   size(1200, 800);                                                  // 幅 1200px, 高さ 800px のウインドウを生成
-  port1 = new Serial(this, "COM3", 9600);     // Serial クラスのインスタンスを生成
+  port1 = new Serial(this, "COM4", 9600);     // Serial クラスのインスタンスを生成
   port1.clear();
   port1.bufferUntil(0x0a);                                          // LF = 0x0d までバッファ
 

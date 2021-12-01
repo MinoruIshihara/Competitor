@@ -16,7 +16,7 @@ void sendDistance(int distance){
 }
 
 void sendRadian(double radian){
-  unsigned char mapedRadian = (unsigned char)map(radian, -PI, PI, 0, 255);
+  unsigned char mapedRadian = (unsigned char)map(radian * 100, -PI * 100, PI * 100, 0, 255);
   Serial.write(mapedRadian);
 }
 
