@@ -9,6 +9,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(
 );
 
 int startTime = 0;
+int cycleNum = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -114,8 +115,8 @@ void loop() {
 }
 
 int backRun(){
-  motors.setSpeeds(-400, -400);  
-  if(millis() - startTime > 1000){
+  motors.setSpeeds(-400, -400);
+  if(millis() - startTime > (2000 - (cycleNum / 2) * 500)){
     startTime = millis();
     return SEEK;
   }
@@ -128,6 +129,7 @@ int seekCup(double distance, double prevDistance, double radian){
   if(millis() - startTime > 800 && 0 < radian && radian < 0.3 ){
     startTime = millis();
     mode = STOP;
+    //node = NEXT;
   }
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
@@ -207,7 +209,12 @@ int takeCup(double distance){
 
 int nextCup(double distance){  
   int mode = NEXT;
-  motors.setSpeeds(100, 100);
+  if(radian < 0){
+    motors.setSpeeds(radian * (300.0 / PI) + 200, radian * (100.0 / PI) + 200);
+  }
+  else{
+    motors.setSpeeds(-radian * (100.0 / PI) + 200 , -radian * (300.0 / PI) + 200);
+  }
   if(millis() - startTime > 100){
     startTime = millis();
     mode = SEEK;
@@ -240,6 +247,7 @@ int push(){
   motors.setSpeeds(100, 100);
   if(millis() - startTime > 1000){
     startTime = millis();
+    cycleNum ++;
     mode = BACK;
   }
   return mode;  
