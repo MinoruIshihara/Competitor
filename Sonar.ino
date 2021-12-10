@@ -13,9 +13,16 @@ double getDistance(){
   digitalWrite(TRIG_PIN, LOW);
 
   int intervalTime = pulseIn(ECHO_PIN, HIGH, 23071);
-  delay(60);
+  delay(30);
   double distance = (0.61 * TEMPERATURE + 331.5) * intervalTime * 0.5 / 10000;
 
-  if(distance > 31.0 || 1.0 > distance )return 31.0;
+  if(distance > 150.0 || 3.0 > distance )distance = 150.0;
+
+  #ifdef DEBUG_SONOR
+  Serial.print("distance: ");
+  Serial.print(distance);
+  Serial.print(", ");
+  #endif
+  
   return distance;
 }

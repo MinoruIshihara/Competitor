@@ -1,54 +1,52 @@
-const unsigned int R_MAX = 969;
-const unsigned int G_MAX = 1024;
-const unsigned int B_MAX = 1024;
-const unsigned int R_MIN = 81;
-const unsigned int G_MIN = 120;
-const unsigned int B_MIN = 126;
+#ifdef CALIBRATION
+unsigned int rMax = 0;
+unsigned int gMax = 0;
+unsigned int bMax = 0;
+unsigned int rMin = 30000;
+unsigned int gMin = 30000;
+unsigned int bMin = 30000;
+#else
+unsigned int rMax = 969;
+unsigned int gMax = 1024;
+unsigned int bMax = 1024;
+unsigned int rMin = 81;
+unsigned int gMin = 120;
+unsigned int bMin = 126;
+#endif
 
 int initColorSensor(){
   tcs.begin();
+  #ifdef CALIBRATION
+    button.waitForButton();
+    calibrationRGB();
+  #endif
 }
 
 struct RGB_STRUCT getRGB(){
   struct RGB_STRUCT rgb;
   unsigned int r, g, b, clr;
   tcs.getRawData(&r, &g, &b, &clr);
-  rgb.r = map(r, R_MIN, R_MAX, 0, 255);
-  rgb.g = map(g, G_MIN, G_MAX, 0, 255);
-  rgb.b = map(b, B_MIN, B_MAX, 0, 255);
+  rgb.r = map(r, rMin, rMax, 0, 255);
+  rgb.g = map(g, gMin, gMax, 0, 255);
+  rgb.b = map(b, bMin, bMax, 0, 255);
 
   return rgb;
 }
 
 void calibrationRGB(){
-  static unsigned int rMax = 0;
-  static unsigned int gMax = 0;
-  static unsigned int bMax = 0;
-  static unsigned int rMin = 30000;
-  static unsigned int gMin = 30000;
-  static unsigned int bMin = 30000;
-  
+  unsigned int startTime = millis();
   unsigned int r, g, b, clr;
+
+  motors.setSpeeds(100, 100);
+  while(millis() - startTime <= 2000){  
+    tcs.getRawData(&r, &g, &b, &clr);
+    rMax = max(r, rMax);
+    gMax = max(g, gMax);
+    bMax = max(b, bMax);
+    rMin = min(r, rMin);
+    gMin = min(g, gMin);
+    bMin = min(b, bMin);
+  }
   
-  tcs.getRawData(&r, &g, &b, &clr);
-  if(r > rMax)rMax = r;
-  if(g > gMax)gMax = g;
-  if(b > bMax)bMax = b;
-  if(r < rMin)rMin = r;
-  if(g < gMin)gMin = g;
-  if(b < bMin)bMin = b;
-
-  Serial.print("Max:");
-  Serial.print(rMax);
-  Serial.print(':');
-  Serial.print(gMax);
-  Serial.print(':');
-  Serial.println(bMax);
-
-  Serial.print("Min:");
-  Serial.print(rMin);
-  Serial.print(':');
-  Serial.print(gMin);
-  Serial.print(':');
-  Serial.println(bMin);
+  motors.setSpeeds(0, 0);
 }
