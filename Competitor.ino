@@ -97,7 +97,7 @@ void loop() {
   #endif
   
   if(serialEvent()){
-    sendAll(rgb, distance, radian, motors.getLeftSpeed(), motors.getRightSpeed());
+    sendAll(rgb, distance, radian, motors.getLeftSpeed(), motors.getRightSpeed(), mode);
   }
   Serial.println("");
 }

@@ -31,11 +31,16 @@ void sendPower(int left, int right){
   Serial.write((unsigned char)map(right, -400, 400, 0, 255));
 }
 
-void sendAll(RGB_STRUCT rgb, int distance, double radian, int right, int left){
+void sendMode(int mode){
+  Serial.write((unsigned char)mode);
+}
+
+void sendAll(RGB_STRUCT rgb, int distance, double radian, int right, int left, int mode){
   Serial.write('H');
   sendRGB(rgb);
   sendDistance(distance);
   sendRadian(radian);
   sendPower(left, right);
+  sendMode(mode);
   Serial.write(0x0A);
 }

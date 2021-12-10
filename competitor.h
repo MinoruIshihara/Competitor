@@ -38,7 +38,8 @@ void sendColor(struct RGB_STRUCT rgb);
 void sendDistance(int distance);
 void sendRadian(double radian);
 void sendPower(int left, int right);
-void sendAll(RGB_STRUCT rgb, int distance, double radian, int left, int right);
+void sendMode(int mode);
+void sendAll(RGB_STRUCT rgb, int distance, double radian, int left, int right, int mode);
 
 int initColorSensor();
 void calibrationRGB();
