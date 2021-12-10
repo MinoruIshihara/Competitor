@@ -22,34 +22,22 @@ void setup() {
   #else
   Serial.print("H000000");
   Serial.write(0x0A);
-  #endif
-  initAcceleration();
-  
+  #endif  
   startTime = millis();
 }
 
-void loop() {
-  static int prevTime = 0;
-  static int currentTime = 0;
-  static int deltaT = 0;
-  
+void loop() {  
   static int mode = BACK;
   
   static struct RGB_STRUCT rgb = {0, 0, 0};
   static double distance = 0;
   static double prevDistance = 0;
   static double radian = 0.0;
-  static struct POSITION_STRUCT pos = {0.0, 0.0};
-
-  prevTime = currentTime;
-  currentTime = millis();
-  deltaT = currentTime - prevTime;
 
   rgb = getRGB();
   prevDistance = distance;
   distance = getDistance();
   radian = getRadian();
-  pos = getPos(pos, deltaT);
   
   #ifdef DEBUG_MODE
   Serial.print("mode: ");
@@ -83,7 +71,7 @@ void loop() {
     break;
 
     case NEXT:
-    mode = nextCup(distance);
+    mode = nextCup(distance, radian);
     break;
 
     case STOP:
@@ -109,7 +97,7 @@ void loop() {
   #endif
   
   if(serialEvent()){
-    sendAll(rgb, distance, radian, pos);
+    sendAll(rgb, distance, radian, motors.getLeftSpeed(), motors.getRightSpeed());
   }
   Serial.println("");
 }
@@ -207,7 +195,7 @@ int takeCup(double distance){
   return mode;
 }
 
-int nextCup(double distance){  
+int nextCup(double distance, double radian){  
   int mode = NEXT;
   if(radian < 0){
     motors.setSpeeds(radian * (300.0 / PI) + 200, radian * (100.0 / PI) + 200);

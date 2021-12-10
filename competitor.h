@@ -26,48 +26,35 @@
 
 #define THRES_DISTANCE 40
 
-struct ACCEL_STRUCT{
-  double x;
-  double y;
-};
-
-struct POSITION_STRUCT{
-  double x;
-  double y;
-};
-
 struct RGB_STRUCT {
   unsigned char r;
   unsigned char g;
   unsigned char b;
 };
 
-void initAcceleration();
-struct POSITION_STRUCT getPos(struct POSITION_STRUCT pos, int deltaT);
-
-int initColorSensor();
-void calibrationRGB();
-
 bool serialEvent();
 void sendRGB(struct RGB_STRUCT rgb);
 void sendColor(struct RGB_STRUCT rgb);
 void sendDistance(int distance);
 void sendRadian(double radian);
-void sendPos(struct POSITION_STRUCT pos);
-void sendAll(RGB_STRUCT rgb, int distance, double radian, struct POSITION_STRUCT mpos);
+void sendPower(int left, int right);
+void sendAll(RGB_STRUCT rgb, int distance, double radian, int left, int right);
+
+int initColorSensor();
+void calibrationRGB();
+
+int initSonar();
+double getDistance();
 
 void initMagnetic();
 double getRadian();
 
 int seekCup(double distance, double prevDistance, double angle);
 int takeCup(double distance);
-int nextCup(double distance);
+int nextCup(double distance, double radian);
 int stopMotor();
 int backRun();
 int faceCupRight(double distance, double prevDistance, double radian);
 int faceCupLeft(double distance, double prevDistance, double radian);
 int bringCup(double radian, RGB_STRUCT rgb);
 int push();
-
-int initSonar();
-double getDistance();
