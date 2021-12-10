@@ -17,8 +17,11 @@ void setup() {
   initColorSensor();
   initMagnetic();
   button.waitForButton();
-  //Serial.print("H000000");
-  //Serial.write(0x0A);
+  #ifdef DEBUG_MODE
+  #else
+  Serial.print("H000000");
+  Serial.write(0x0A);
+  #endif
   initAcceleration();
   
   startTime = millis();
@@ -62,8 +65,16 @@ void loop() {
     mode = seekCup(distance, prevDistance, radian);
     break;
     
-    case FACE:
-    mode = faceCup(distance, prevDistance, radian);
+    case JUDGE:
+    mode = judgeCup(distance);
+    break;
+    
+    case FACE_RIGHT:
+    mode = faceCupRight(distance, prevDistance, radian);
+    break;
+    
+    case FACE_LEFT:
+    mode = faceCupLeft(distance, prevDistance, radian);
     break;
     
     case TAKE:
@@ -79,7 +90,11 @@ void loop() {
     break;
 
     case BRING:
-    mode = bringCup(radian);
+    mode = bringCup(radian, rgb);
+    break;
+
+    case PUSH:
+    mode = push();
     break;
     
   }
@@ -109,37 +124,73 @@ int backRun(){
 
 int seekCup(double distance, double prevDistance, double radian){
   int mode = SEEK;
-  if(millis() - startTime > 2000){
-    motors.setSpeeds(-120, 120);
-  }
-  else {
-    motors.setSpeeds(120, -120);
-  }
-  if(millis() - startTime > 100000){
+  motors.setSpeeds(120, -120);
+  if(millis() - startTime > 800 && 0 < radian && radian < 0.3 ){
     startTime = millis();
     mode = STOP;
   }
-  if(distance < 40 /*&& prevDistance < 40*/ ){
+  if(distance < 40 ){
     motors.setSpeeds(0, 0);
     delay(800);
     startTime = millis();
-    mode = FACE;
+    mode = JUDGE;
   }
   return mode;
 }
 
-int faceCup(double distance, double prevDistance, double radian){
+int judgeCup(double distance){
+  int mode = JUDGE;
+  if(distance > THRES_DISTANCE){
+    mode = FACE_RIGHT;
+  }
+  else{
+    mode = FACE_LEFT;
+  }
+  return mode;
+}
+
+int faceCupRight(double distance, double prevDistance, double radian){
+  
+  #ifdef DEBUG_SONOR
   Serial.print("deltaSita: ");
   Serial.print(distance - prevDistance);
   Serial.print(", ");
-  int mode = FACE;
-  motors.setSpeeds(-100, 100);
-  if(millis() - startTime > 1000){
-    motors.setSpeeds(100, -100);
-    if(distance - prevDistance > 0 && distance - prevDistance < 1 && distance < 40){
+  #endif
+  
+  int mode = FACE_RIGHT;
+  if(millis() - startTime < 1500){
+    motors.setSpeeds(-90, 90);
+    if(distance - prevDistance > 0 && distance < 40){
       startTime = millis();
       mode = TAKE;
     }
+  }
+  else{
+    startTime = millis();
+    mode = FACE_LEFT;
+  }
+  return mode; 
+}
+
+int faceCupLeft(double distance, double prevDistance, double radian){
+  
+  #ifdef DEBUG_SONOR
+  Serial.print("deltaSita: ");
+  Serial.print(distance - prevDistance);
+  Serial.print(", ");
+  #endif
+  
+  int mode = FACE_LEFT;
+  if(millis() - startTime < 1500){
+    motors.setSpeeds(100, -100);
+    if(distance - prevDistance > 0 && distance < 40){
+      startTime = millis();
+      mode = TAKE;
+    }
+  }
+  else{
+    startTime = millis();
+    mode = FACE_RIGHT;
   }
   return mode; 
 }
@@ -170,17 +221,26 @@ int stopMotor(){
   return mode;
 }
 
-int bringCup(double radian){
+int bringCup(double radian, RGB_STRUCT rgb){
   int mode = BRING;
-  /*if(abs(radian) < 0.1){
-    motors.setSpeeds(300, 300);
-  }
-  else */if(radian < 0){
-    motors.setSpeeds(-radian * 100 + 120 , radian * 100 + 80);
+  if(radian < 0){
+    motors.setSpeeds(radian * (400.0 / PI) + 300.0, radian * (200.0 / PI) + 300);
   }
   else{
-    motors.setSpeeds(-radian * 100 + 80 , radian * 100 + 120);
+    motors.setSpeeds(-radian * (200.0 / PI) + 300 , -radian * (400.0 / PI) + 300);
   }
-  
+  if( rgb.r < 80 || rgb.g < 80 || 200 < rgb.b){
+    mode = PUSH;
+  }
   return mode;
+}
+
+int push(){
+  int mode = PUSH;
+  motors.setSpeeds(100, 100);
+  if(millis() - startTime > 1000){
+    startTime = millis();
+    mode = BACK;
+  }
+  return mode;  
 }

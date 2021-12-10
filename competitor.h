@@ -15,11 +15,17 @@
 
 #define BACK 0
 #define SEEK 1
-#define FACE 2
-#define TAKE 3
-#define NEXT 4
-#define STOP 5
-#define BRING 6
+#define JUDGE 2
+#define FACE_RIGHT 3
+#define FACE_LEFT 4
+#define TAKE 5
+#define NEXT 6
+#define STOP 7
+#define BRING 8
+#define PUSH 9
+
+#define THRES_DISTANCE 40
+
 struct ACCEL_STRUCT{
   double x;
   double y;
@@ -58,8 +64,10 @@ int takeCup(double distance);
 int nextCup(double distance);
 int stopMotor();
 int backRun();
-int faceCup(double distance, double prevDistance, double radian);
-int bringCup(double radian);
+int faceCupRight(double distance, double prevDistance, double radian);
+int faceCupLeft(double distance, double prevDistance, double radian);
+int bringCup(double radian, RGB_STRUCT rgb);
+int push();
 
 int initSonar();
 double getDistance();
