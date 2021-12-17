@@ -16,18 +16,18 @@
 
 #define BACK 0
 #define SEEK 1
-#define JUDGE_RIGHT 2
-#define JUDGE_LEFT 3
-#define FACE_RIGHT 4
-#define FACE_LEFT 5
-#define TAKE 6
-#define NEXT 7
-#define STOP 8
-#define BRING 9
-#define PUSH 10
+#define JUDGE 2
+#define FACE_RIGHT 3
+#define FACE_LEFT 4
+#define TAKE 5
+#define NEXT 6
+#define STOP 7
+#define BRING 8
+#define PUSH 9
 
-#define WAVE_SEEK_LEFT 11
-#define WAVE_SEEK_RIGHT 12
+#define ROTATE_SEEK 10
+#define FACE_NEXT 11
+#define GO_NEXT_ROTATE 12
 
 #define THRES_DISTANCE 40
 #define RED_RGB 144, 16, 32
@@ -57,7 +57,9 @@ double getDistance();
 void initMagnetic();
 double getRadian();
 
-int seekCup(double distance, double angle);
+float faceTo(float nextRadian, double radian , int deltaT);
+
+int seekCup(double distance, double prevDistance, double angle);
 int takeCup(double distance);
 int nextCup(double distance, double radian);
 int stopMotor();
@@ -67,4 +69,6 @@ int faceCupLeft(double distance, double prevDistance, double radian);
 int bringCup(double radian, RGB_STRUCT rgb);
 int push();
 
-int waveSeek(double distance, double angle);
+int rotateSeek(double distance);
+int faceNext(double radian, int deltaT);
+int goNextRotate(double radian, int deltaT);

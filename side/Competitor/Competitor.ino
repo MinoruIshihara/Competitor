@@ -11,7 +11,10 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(
 int startTime = 0;
 int cycleNum = 0;
 int facingNum = 0;
-int waveCount = 0;
+int rotateNum = 0;
+
+float thetaNext = 0.0;
+float eSum = 0.0;
 
 void setup() {
   Serial.begin(9600);
@@ -29,7 +32,7 @@ void setup() {
 }
 
 void loop() {
-  static int mode = BACK;
+  static int mode = ROTATE_SEEK;
   
   static int prevTime = 0;
   static int deltaT = 0;
@@ -59,25 +62,13 @@ void loop() {
     break;
     
     case SEEK:
-    mode = seekCup(distance, radian);
-    break;
-
-    case WAVE_SEEK_LEFT:
-    mode = waveSeekLeft(distance, radian);
-    break;
-
-    case WAVE_SEEK_RIGHT:
-    mode = waveSeekRight(distance, radian);
-    break;
-
-    case JUDGE_LEFT:
-    mode = judgeCupLeft(distance);
+    mode = seekCup(distance, prevDistance, radian);
     break;
     
-    case JUDGE_RIGHT:
-    mode = judgeCupRight(distance);
+    case JUDGE:
+    mode = judgeCup(distance);
     break;
-
+    
     case FACE_RIGHT:
     mode = faceCupRight(distance, prevDistance, radian);
     break;
@@ -104,7 +95,19 @@ void loop() {
 
     case PUSH:
     mode = push();
-    break; 
+    break;
+    
+    case ROTATE_SEEK:
+    mode = rotateSeek(distance);
+    break;
+    
+    case FACE_NEXT:
+    mode = faceNext(radian, deltaT);
+    break;
+    
+    case GO_NEXT_ROTATE:
+    mode = goNextRotate(radian, deltaT);
+    break;
   }
 
   #ifdef DEBUG_MOTOR
@@ -132,50 +135,30 @@ int backRun(){
   return BACK;
 }
 
-int seekCup(double distance, double radian){
+int seekCup(double distance, double prevDistance, double radian){
   int mode = SEEK;
-  
-  if(millis() - startTime < 500){
-    motors.setSpeeds(-400, 400);
-  }
-  else {
-    motors.setSpeeds(120, -120);
-  }
-  
-  if(millis() - startTime > 800 && 1.5 < radian){
+  motors.setSpeeds(120, -120);
+  if(millis() - startTime > 800 && 0 < radian && radian < 0.3 ){
     startTime = millis();
-    mode = WAVE_SEEK_LEFT;
+    mode = NEXT;
   }
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
     delay(800);
     startTime = millis();
-    mode = JUDGE_LEFT;
+    mode = JUDGE;
   }
-  
   return mode;
 }
 
-int judgeCupLeft(double distance){
-  int mode = JUDGE_LEFT;
+int judgeCup(double distance){
+  int mode = JUDGE;
   facingNum = 0;
   if(distance > THRES_DISTANCE){
     mode = FACE_RIGHT;
   }
   else{
     mode = FACE_LEFT;
-  }
-  return mode;
-}
-
-int judgeCupRight(double distance){
-  int mode = JUDGE_RIGHT;
-  facingNum = 0;
-  if(distance > THRES_DISTANCE){
-    mode = FACE_LEFT;
-  }
-  else{
-    mode = FACE_RIGHT;
   }
   return mode;
 }
@@ -262,42 +245,6 @@ int nextCup(double distance, double radian){
   return mode;
 }
 
-int waveSeekLeft(double distance, double angle){
-  motors.setSpeeds(80, 150);
-  int mode = WAVE_SEEK_LEFT;
-
-  if(millis() - startTime > 1000){
-    waveCount ++;
-    mode = WAVE_SEEK_RIGHT;
-  }
-  
-  if(distance < 40 ){
-    motors.setSpeeds(0, 0);
-    delay(800);
-    startTime = millis();
-    mode = JUDGE_LEFT;
-  }
-  return mode;
-}
-
-int waveSeekRight(double distance, double angle){
-  int mode = WAVE_SEEK_RIGHT;
-
-  motors.setSpeeds(150, 80);
-  if(millis() - startTime > 1000){
-    waveCount ++;
-    mode = WAVE_SEEK_LEFT;
-  }
-
-  if(distance < 40 ){
-    motors.setSpeeds(0, 0);
-    delay(800);
-    startTime = millis();
-    mode = JUDGE_RIGHT;
-  }
-  return mode;
-}
-
 int stopMotor(){
   int mode = STOP;
   motors.setSpeeds(0, 0);
@@ -332,9 +279,78 @@ int push(){
   int mode = PUSH;
   motors.setSpeeds(100, 100);
   if(millis() - startTime > 1000){
+    motors.setSpeeds(-100, -100);
+  }
+  else if(millis() - startTime > 2000){    
     startTime = millis();
     cycleNum ++;
-    mode = BACK;
+    mode = ROTATE_SEEK;
   }
-  return mode;  
+  return mode;
+}
+
+int rotateSeek(double distance){
+  int mode = ROTATE_SEEK;
+  if(distance < 40 ){
+    motors.setSpeeds(0, 0);
+    delay(800);
+    startTime = millis();
+    mode = JUDGE;
+  }
+  if (millis() - startTime < 3000) {
+    motors.setSpeeds(150, -150);
+  }
+  else {
+    mode = FACE_NEXT;
+    rotateNum++;
+    double thetaNext =  - PI / 3 + 2 * PI / 3 * (rotateNum % 2);
+    if (thetaNext < -PI) thetaNext += 2 * PI; // 角度を0°~360°に収める
+    if (thetaNext > PI) thetaNext -= PI;
+  }
+  return mode;
+}
+
+int faceNext(double radian, int deltaT){
+  if (abs(thetaNext - radian) <= PI / 36 ) {
+    return GO_NEXT_ROTATE;
+  }
+  
+  float u = faceTo(thetaNext, radian, deltaT);
+  
+  motors.setSpeeds(u * 60, - u * 60);
+  
+  return FACE_NEXT;
+}
+
+int goNextRotate(double radian, int deltaT){
+  int mode = GO_NEXT_ROTATE;
+  float u = faceTo(thetaNext, radian, deltaT);
+  motors.setSpeeds(u * 55 + 150, - u * 55 + 150);
+  
+  if (millis() - startTime > 1500) {
+    mode = ROTATE_SEEK;
+    startTime = millis();
+  }
+
+  return mode;
+}
+
+float faceTo(float nextRadian, double radian , int deltaT){
+  float e = nextRadian - radian;
+  float u;
+  float KP = 4.0;
+  float TIinv = 2/1000.0;
+  
+  if (e < -PI ) e += 2 * PI;
+  if (e > PI )  e -= 2 * PI;
+  if (abs(e) > 45.0 ) { // |e|>45のときはP制御
+    u = KP*e;           // P制御
+  } else {              // |e|<=45 の時はPI制御
+    eSum += TIinv * e * (deltaT);
+    u = KP * ( e + eSum );   // PI 制御
+  }
+  if ( u > PI ) u = PI;  // 飽和
+  if ( u < -PI ) u = -PI; // 飽和
+
+  return u;
 }
