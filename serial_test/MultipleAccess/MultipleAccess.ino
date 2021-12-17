@@ -27,7 +27,7 @@ void setup() {
 }
 
 void loop() {  
-  static int mode = BACK;
+  static int mode = STOP;
   
   static struct RGB_STRUCT rgb = {0, 0, 0};
   static double distance = 0;
@@ -118,7 +118,8 @@ int seekCup(double distance, double prevDistance, double radian){
   motors.setSpeeds(120, -120);
   if(millis() - startTime > 800 && 0 < radian && radian < 0.3 ){
     startTime = millis();
-    mode = NEXT;
+    mode = STOP;
+    //node = NEXT;
   }
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
@@ -188,28 +189,23 @@ int faceCupLeft(double distance, double prevDistance, double radian){
 
 int takeCup(double distance){
   int mode = TAKE;
-  motors.setSpeeds(100, 100);
-  if(distance < 3.5){
+  motors.setSpeeds(120, 120);
+  if(distance < 5){
     startTime = millis();
     mode = BRING;
-    motors.setSpeeds(0, 0);
-    delay(1000);
   }
   return mode;
 }
 
 int nextCup(double distance, double radian){  
   int mode = NEXT;
-  if(abs(radian) < 0.1){
-    motors.setSpeeds(200, 200);    
-  }
-  else if(abs(radian) > 1.5){
-    motors.setSpeeds(-radian * 60 , radian * 60 );
+  if(radian < 0){
+    motors.setSpeeds(radian * (300.0 / PI) + 200, radian * (100.0 / PI) + 200);
   }
   else{
-    motors.setSpeeds( -radian * 160 + 80, radian * 160 + 80);
+    motors.setSpeeds(-radian * (100.0 / PI) + 200 , -radian * (300.0 / PI) + 200);
   }
-  if(millis() - startTime > 3000){
+  if(millis() - startTime > 100){
     startTime = millis();
     mode = SEEK;
   }
@@ -224,25 +220,15 @@ int stopMotor(){
 
 int bringCup(double radian, RGB_STRUCT rgb){
   int mode = BRING;
-  if(abs(radian) < 0.1){
-    motors.setSpeeds(200, 200);    
-  }
-  else if(abs(radian) > 1.5){
-    motors.setSpeeds( -radian * 60 + 40, radian * 60 + 40);
+  if(radian < 0){
+    motors.setSpeeds(radian * (400.0 / PI) + 300.0, radian * (200.0 / PI) + 300);
   }
   else{
-    if(radian < 0)motors.setSpeeds( -(radian - 0.4) * 150 , (radian - 0.4) * 100 );
-    else motors.setSpeeds( -(radian + 0.4) * 100 , (radian + 0.4) * 150 );
+    motors.setSpeeds(-radian * (200.0 / PI) + 300 , -radian * (400.0 / PI) + 300);
   }
-  #ifdef TEAM_RED
-  if( identify_color( rgb, RED_RGB ) ){
+  if( rgb.r < 80 || rgb.g < 80 || 200 < rgb.b){
     mode = PUSH;
   }
-  #else
-  if( identify_color( rgb, 40, 80, 110 ) ){
-    mode = PUSH;
-  }
-  #endif
   return mode;
 }
 

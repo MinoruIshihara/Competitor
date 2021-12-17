@@ -50,15 +50,3 @@ void calibrationRGB(){
   
   motors.setSpeeds(0, 0);
 }
-
-int identify_color(RGB_STRUCT rgb, int red, int green, int blue )
-{
-  float d2;
-  float d2_max = 30; // パラメーター（適宜調整）
-
-  d2 = pow(red - rgb.r, 2) + pow(green - rgb.g, 2) + pow(blue - rgb.b, 2);
-  if ( d2 < d2_max * d2_max )
-    return 1;
-  else
-    return 0;
-}

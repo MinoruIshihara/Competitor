@@ -6,7 +6,6 @@
 #include <LSM303.h>
 #include <Adafruit_TCS34725.h>
 
-#define TEAM_RED
 #define CALIBRATION
 //#define DEBUG_ANGLE
 //#define DEBUG_ACCEL
@@ -26,7 +25,6 @@
 #define PUSH 9
 
 #define THRES_DISTANCE 40
-#define RED_RGB 144, 16, 32
 
 struct RGB_STRUCT {
   unsigned char r;
@@ -45,7 +43,6 @@ void sendAll(RGB_STRUCT rgb, int distance, double radian, int left, int right, i
 
 int initColorSensor();
 void calibrationRGB();
-int identify_color(RGB_STRUCT rgb, int red, int green, int blue );
 
 int initSonar();
 double getDistance();

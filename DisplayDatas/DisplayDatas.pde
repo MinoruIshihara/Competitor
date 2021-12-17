@@ -32,7 +32,7 @@ class RGB{
 
 void setup() {
   size(1900, 960);
-  /*
+  
   port0 = new Serial(this, "COM4", 9600);
   port0.clear();
   port0.bufferUntil(0x0a);
@@ -42,7 +42,7 @@ void setup() {
   port2 = new Serial(this, "COM9", 9600);
   port2.clear();
   port2.bufferUntil(0x0a);
-  */
+  
   for(int i = 0; i < 3; i++){
     receivedRGB[i]= new RGB(240, 240, 180);
   }
@@ -242,9 +242,11 @@ void mapping(){
 }
 
 void readBits(Serial p){
+  println("arrival");
   int portIndex = 0;
   if(p == port1)portIndex = 1;
   if(p == port2)portIndex = 2;
+  print(portIndex);
   
   receivedRGB[portIndex].r = p.read();
   int gb = p.read();
@@ -261,7 +263,7 @@ void readBits(Serial p){
     distance[portIndex] = 0; angle[portIndex] = 0; powerL[portIndex] = 0; powerR[portIndex] = 0;
   }
   else{
-    println("Receive successed");
+    println(portIndex);
     
     dataCount ++;
     if(millis() - prevRecvTime > 1000){
@@ -271,13 +273,24 @@ void readBits(Serial p){
     }
     mapping();
     
-    p.write('H');
+    switch(portIndex){
+      case 0:
+      port0.write("H");
+      break;
+      case 1:
+      port1.write("H");
+      break;
+      case 2:
+      port2.write("H");
+      break;
+    }
     
   }
 }
 
 void serialEvent(Serial p) {
   if (p.available() > 8) {
+  println("Serial");
     if(p.read() == 'H'){
       readBits(p);
     }

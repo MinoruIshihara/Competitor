@@ -16,7 +16,7 @@ double getDistance(){
   delay(30);
   double distance = (0.61 * TEMPERATURE + 331.5) * intervalTime * 0.5 / 10000;
 
-  if(distance > 150.0 || 2.5 > distance )distance = 150.0;
+  if(distance > 150.0 || 3.0 > distance )distance = 150.0;
 
   #ifdef DEBUG_SONOR
   Serial.print("distance: ");
