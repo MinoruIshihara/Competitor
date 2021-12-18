@@ -97,3 +97,11 @@ void  calibrationMagnetic()
   motors.setRightSpeed(0);
   motors.setLeftSpeed(0);
 }
+
+float getRotateTheta(int n){
+  return n % 4 == 3 ? - PI / 2 : getNextTheta(n);
+}
+
+float getNextTheta(int n){
+  return n / 4 % 2 == 0 ? 0 : PI;
+}

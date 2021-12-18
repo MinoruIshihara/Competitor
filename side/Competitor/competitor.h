@@ -52,12 +52,12 @@ void calibrationRGB();
 int identify_color(RGB_STRUCT rgb, int red, int green, int blue );
 
 int initSonar();
-double getDistance();
+float getDistance();
 
 void initMagnetic();
-double getRadian();
-
-float faceTo(float nextRadian, double radian , int deltaT);
+float getRadian();
+float getRotateTheta(int n);
+float getNextTheta(int n);
 
 int seekCup(double distance, double prevDistance, double angle);
 int takeCup(double distance);
