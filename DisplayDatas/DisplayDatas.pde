@@ -275,13 +275,13 @@ void readBits(Serial p){
     
     switch(portIndex){
       case 0:
-      port0.write("H");
-      break;
-      case 1:
       port1.write("H");
       break;
-      case 2:
+      case 1:
       port2.write("H");
+      break;
+      case 2:
+      port0.write("H");
       break;
     }
     

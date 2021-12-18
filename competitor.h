@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Wire.h>
+#include <ZumoBuzzer.h>
 #include <ZumoMotors.h>
 #include <Pushbutton.h>
 #include <LSM303.h>
@@ -16,27 +17,31 @@
 
 #define BACK 0
 #define SEEK 1
-#define JUDGE_RIGHT 2
-#define JUDGE_LEFT 3
-#define FACE_RIGHT 4
-#define FACE_LEFT 5
+#define JUDGE_R 2
+#define JUDGE_L 3
+#define FACE_R 4
+#define FACE_L 5
 #define TAKE 6
 #define NEXT 7
 #define STOP 8
 #define BRING 9
 #define PUSH 10
 
-#define WAVE_SEEK_LEFT 11
-#define WAVE_SEEK_RIGHT 12
+#define WAVE_L 11
+#define WAVE_R 12
 
+#define MELODY_LENGTH 5
 #define THRES_DISTANCE 40
 #define RED_RGB 144, 16, 32
+#define BLUE_RGB 40, 80, 110
 
 struct RGB_STRUCT {
   unsigned char r;
   unsigned char g;
   unsigned char b;
 };
+
+struct RGB_STRUCT initRGB;
 
 bool serialEvent();
 void sendRGB(struct RGB_STRUCT rgb);
@@ -57,14 +62,19 @@ double getDistance();
 void initMagnetic();
 double getRadian();
 
-int seekCup(double distance, double angle);
+int seekCup(double distance, double prevRadian, double angle);
 int takeCup(double distance);
 int nextCup(double distance, double radian);
 int stopMotor();
 int backRun();
-int faceCupRight(double distance, double prevDistance, double radian);
-int faceCupLeft(double distance, double prevDistance, double radian);
+int judgeL(double distance);
+int judgeR(double distance);
+int faceCupL(double distance, double prevDistance, double radian);
+int faceCupR(double distance, double prevDistance, double radian);
 int bringCup(double radian, RGB_STRUCT rgb);
 int push();
 
-int waveSeek(double distance, double angle);
+int waveL(double distance, double angle);
+int waveR(double distance, double angle);
+
+void playSound(int soundNum);

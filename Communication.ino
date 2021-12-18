@@ -44,3 +44,22 @@ void sendAll(RGB_STRUCT rgb, int distance, double radian, int right, int left, i
   sendMode(mode);
   Serial.write(0x0A);
 }
+
+void playSound(int soundNum){
+  switch(soundNum){
+    case 0:
+    buzzer.playNote(NOTE_E(5), 100, 8);
+    buzzer.playNote(SILENT_NOTE, 25, 8);
+    buzzer.playNote(NOTE_E(5), 100, 8);
+    break;
+
+    case 1:
+    buzzer.playNote(NOTE_E(5), 100, 8);
+    buzzer.playNote(SILENT_NOTE, 25, 8);
+    buzzer.playNote(NOTE_G(5), 100, 8);
+    buzzer.playNote(SILENT_NOTE, 25, 8);
+    buzzer.playNote(NOTE_E(5), 100, 8);
+    break;
+    
+  }
+}

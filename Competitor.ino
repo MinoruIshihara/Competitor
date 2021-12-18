@@ -1,5 +1,6 @@
 #include "Competitor.h"
 
+ZumoBuzzer buzzer;
 ZumoMotors motors;
 Pushbutton button(ZUMO_BUTTON);
 LSM303 compass = LSM303();
@@ -10,7 +11,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(
 
 int startTime = 0;
 int cycleNum = 0;
-int facingNum = 0;
+int facingCount = 0;
 int waveCount = 0;
 
 void setup() {
@@ -35,9 +36,10 @@ void loop() {
   static int deltaT = 0;
   
   static struct RGB_STRUCT rgb = {0, 0, 0};
-  static double distance = 0;
-  static double prevDistance = 0;
-  static double radian = 0.0;
+  static float distance = 0.0;
+  static float prevDistance = 0.0;
+  static float radian = 0.0;
+  static float prevRadian = 0.0;
 
   deltaT = millis() - prevTime;
   prevTime = millis();
@@ -45,6 +47,7 @@ void loop() {
   rgb = getRGB();
   prevDistance = distance;
   distance = getDistance();
+  prevRadian = radian;
   radian = getRadian();
   
   #ifdef DEBUG_MODE
@@ -59,31 +62,31 @@ void loop() {
     break;
     
     case SEEK:
-    mode = seekCup(distance, radian);
+    mode = seekCup(distance, prevRadian, radian);
     break;
 
-    case WAVE_SEEK_LEFT:
-    mode = waveSeekLeft(distance, radian);
+    case WAVE_L:
+    mode = waveL(distance, radian);
     break;
 
-    case WAVE_SEEK_RIGHT:
-    mode = waveSeekRight(distance, radian);
+    case WAVE_R:
+    mode = waveR(distance, radian);
     break;
 
-    case JUDGE_LEFT:
-    mode = judgeCupLeft(distance);
+    case JUDGE_L:
+    mode = judgeL(distance);
     break;
     
-    case JUDGE_RIGHT:
-    mode = judgeCupRight(distance);
+    case JUDGE_R:
+    mode = judgeR(distance);
     break;
 
-    case FACE_RIGHT:
-    mode = faceCupRight(distance, prevDistance, radian);
+    case FACE_R:
+    mode = faceR(distance, prevDistance, radian);
     break;
     
-    case FACE_LEFT:
-    mode = faceCupLeft(distance, prevDistance, radian);
+    case FACE_L:
+    mode = faceL(distance, prevDistance, radian);
     break;
     
     case TAKE:
@@ -132,122 +135,134 @@ int backRun(){
   return BACK;
 }
 
-int seekCup(double distance, double radian){
-  int mode = SEEK;
-  
-  if(millis() - startTime < 500){
-    motors.setSpeeds(-400, 400);
-  }
-  else {
-    motors.setSpeeds(120, -120);
-  }
-  
-  if(millis() - startTime > 800 && 1.5 < radian){
-    startTime = millis();
-    mode = WAVE_SEEK_LEFT;
-  }
+int seekCup(double distance, double prevRadian, double radian){  
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
-    delay(800);
+    delay(200);
     startTime = millis();
-    mode = JUDGE_LEFT;
+    return JUDGE_R;
   }
-  
-  return mode;
-}
-
-int judgeCupLeft(double distance){
-  int mode = JUDGE_LEFT;
-  facingNum = 0;
-  if(distance > THRES_DISTANCE){
-    mode = FACE_RIGHT;
-  }
-  else{
-    mode = FACE_LEFT;
-  }
-  return mode;
-}
-
-int judgeCupRight(double distance){
-  int mode = JUDGE_RIGHT;
-  facingNum = 0;
-  if(distance > THRES_DISTANCE){
-    mode = FACE_LEFT;
-  }
-  else{
-    mode = FACE_RIGHT;
-  }
-  return mode;
-}
-
-int faceCupRight(double distance, double prevDistance, double radian){
-  
-  #ifdef DEBUG_SONOR
-  Serial.print("deltaSita: ");
-  Serial.print(distance - prevDistance);
-  Serial.print(", ");
-  #endif
-
-  if(facingNum > 4)return NEXT;
-  
-  int mode = FACE_RIGHT;
-  if(millis() - startTime < 1500){
-    motors.setSpeeds(-90, 90);
-    if(distance - prevDistance > 0 && distance < 40){
-      startTime = millis();
-      mode = TAKE;
-    }
-  }
-  else{
-    startTime = millis();
-    mode = FACE_LEFT;
-    facingNum ++;
-  }
-  return mode; 
-}
-
-int faceCupLeft(double distance, double prevDistance, double radian){
-  
-  #ifdef DEBUG_SONOR
-  Serial.print("deltaSita: ");
-  Serial.print(distance - prevDistance);
-  Serial.print(", ");
-  #endif
-  
-  if(facingNum > 4)return NEXT;
-
-  int mode = FACE_LEFT;
-  if(millis() - startTime < 1500){
-    motors.setSpeeds(100, -100);
-    if(distance - prevDistance > 0 && distance < 40){
-      startTime = millis();
-      mode = TAKE;
-    }
-  }
-  else{
-    startTime = millis();
-    mode = FACE_RIGHT;
-    facingNum ++;
-  }
-  return mode; 
-}
-
-int takeCup(double distance){
-  int mode = TAKE;
-  motors.setSpeeds(100, 100);
-  if(distance < 3.5){
-    startTime = millis();
-    mode = BRING;
+  if(millis() - startTime > 2000 && prevRadian < 1.5 && 1.5 < radian){
     motors.setSpeeds(0, 0);
-    delay(1000);
+    delay(200);
+    startTime = millis();
+    return WAVE_R;
   }
-  return mode;
+  motors.setSpeeds(120, -120);
+  
+  return SEEK;
 }
 
-int nextCup(double distance, double radian){  
-  int mode = NEXT;
+int judgeL(double distance){
+  facingCount = 0;
+  if(distance < THRES_DISTANCE){
+    startTime = millis();
+    return FACE_L;
+  }
+  else{
+    startTime = millis();
+    return FACE_R;
+  }
+}
+
+int judgeR(double distance){
+  facingCount = 0;
+  if(distance < THRES_DISTANCE){
+    startTime = millis();
+    return FACE_R;
+  }
+  else{
+    startTime = millis();
+    return FACE_L;
+  }
+}
+
+int faceL(double distance, double prevDistance, double radian){    
+  if(facingCount > 4){
+    startTime = millis();
+    return SEEK;
+  }
+  
+  if(distance - prevDistance > 0 && distance < 40){
+    startTime = millis();
+    return TAKE;
+  }
+  motors.setSpeeds(-90, 90);
+  
+  if(millis() - startTime > 1500){
+    startTime = millis();
+    facingCount ++;
+    return FACE_R;
+  }
+  
+  return FACE_L; 
+}
+
+int faceR(double distance, double prevDistance, double radian){
+  if(facingCount > 4){
+    startTime = millis();
+    return SEEK;
+  }
+  
+  if(distance - prevDistance > 0 && distance < 40){
+    startTime = millis();
+    return TAKE;
+  }
+  motors.setSpeeds(90, -90);
+  
+  if(millis() - startTime > 1500){
+    startTime = millis();
+    facingCount ++;
+    return FACE_L;
+  }
+  
+  return FACE_R; 
+}
+
+int takeCup(float distance){
+  int power = distance * 5 + 75;
+  motors.setSpeeds(power, power);
+  if(distance < 3.5){
+    motors.setSpeeds(0, 0);
+    delay(300);
+    startTime = millis();
+    return BRING;
+  }
+  return TAKE;
+}
+
+int bringCup(double radian, RGB_STRUCT rgb){
   if(abs(radian) < 0.1){
-    motors.setSpeeds(200, 200);    
+    motors.setSpeeds(200, 200);
+  }
+  else if(abs(radian) > 1.5){
+    motors.setSpeeds( -radian * 60 + 40, radian * 60 + 40);
+  }
+  else{
+    if(radian < 0)motors.setSpeeds( -(radian - 0.4) * 150 , (radian - 0.4) * 100 );
+    else motors.setSpeeds( -(radian + 0.4) * 100 , (radian + 0.4) * 150 );
+  }
+  
+  if( identify_color( rgb, initRGB ) ){
+    startTime = millis();
+    return PUSH;
+  }
+  return BRING;
+}
+
+int push(){
+  motors.setSpeeds(100, 100);
+  if(millis() - startTime > 1000){
+    startTime = millis();
+    cycleNum ++;
+    return BACK;
+  }
+  return PUSH;
+}
+
+int nextCup(double distance, double radian){
+  if(abs(radian) < 0.1){
+    motors.setSpeeds(200, 200);
   }
   else if(abs(radian) > 1.5){
     motors.setSpeeds(-radian * 60 , radian * 60 );
@@ -257,84 +272,47 @@ int nextCup(double distance, double radian){
   }
   if(millis() - startTime > 3000){
     startTime = millis();
-    mode = SEEK;
+    return SEEK;
   }
-  return mode;
+  return NEXT;
 }
 
-int waveSeekLeft(double distance, double angle){
+int waveL(double distance, double angle){
   motors.setSpeeds(80, 150);
-  int mode = WAVE_SEEK_LEFT;
 
-  if(millis() - startTime > 1000){
+  if(millis() - startTime > 1500){
     waveCount ++;
-    mode = WAVE_SEEK_RIGHT;
+    startTime = millis();
+    return WAVE_R;
   }
   
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
     delay(800);
     startTime = millis();
-    mode = JUDGE_LEFT;
+    return JUDGE_L;
   }
-  return mode;
+  return WAVE_L;
 }
 
-int waveSeekRight(double distance, double angle){
-  int mode = WAVE_SEEK_RIGHT;
-
+int waveR(double distance, double angle){
   motors.setSpeeds(150, 80);
-  if(millis() - startTime > 1000){
+  if(millis() - startTime > 1500){
     waveCount ++;
-    mode = WAVE_SEEK_LEFT;
+    startTime = millis();
+    return WAVE_L;
   }
 
   if(distance < 40 ){
     motors.setSpeeds(0, 0);
     delay(800);
     startTime = millis();
-    mode = JUDGE_RIGHT;
+    return JUDGE_R;
   }
-  return mode;
+  return WAVE_R;
 }
 
 int stopMotor(){
-  int mode = STOP;
   motors.setSpeeds(0, 0);
-  return mode;
-}
-
-int bringCup(double radian, RGB_STRUCT rgb){
-  int mode = BRING;
-  if(abs(radian) < 0.1){
-    motors.setSpeeds(200, 200);    
-  }
-  else if(abs(radian) > 1.5){
-    motors.setSpeeds( -radian * 60 + 40, radian * 60 + 40);
-  }
-  else{
-    if(radian < 0)motors.setSpeeds( -(radian - 0.4) * 150 , (radian - 0.4) * 100 );
-    else motors.setSpeeds( -(radian + 0.4) * 100 , (radian + 0.4) * 150 );
-  }
-  #ifdef TEAM_RED
-  if( identify_color( rgb, RED_RGB ) ){
-    mode = PUSH;
-  }
-  #else
-  if( identify_color( rgb, 40, 80, 110 ) ){
-    mode = PUSH;
-  }
-  #endif
-  return mode;
-}
-
-int push(){
-  int mode = PUSH;
-  motors.setSpeeds(100, 100);
-  if(millis() - startTime > 1000){
-    startTime = millis();
-    cycleNum ++;
-    mode = BACK;
-  }
-  return mode;  
+  return STOP;
 }
