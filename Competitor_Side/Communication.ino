@@ -48,17 +48,17 @@ void sendAll(RGB_STRUCT rgb, int distance, float radian, int right, int left, in
 void playSound(int soundNum){
   switch(soundNum){
     case 0:
-    buzzer.playNote(NOTE_E(5), 100, 8);
-    buzzer.playNote(SILENT_NOTE, 25, 8);
-    buzzer.playNote(NOTE_E(5), 100, 8);
+    buzzer.playNote(NOTE_E(5), 1000, 15);
+    buzzer.playNote(SILENT_NOTE, 25, 15);
+    buzzer.playNote(NOTE_E(5), 100, 15);
     break;
 
     case 1:
-    buzzer.playNote(NOTE_E(5), 100, 8);
-    buzzer.playNote(SILENT_NOTE, 25, 8);
-    buzzer.playNote(NOTE_G(5), 100, 8);
-    buzzer.playNote(SILENT_NOTE, 25, 8);
-    buzzer.playNote(NOTE_E(5), 100, 8);
+    buzzer.playNote(NOTE_E(5), 1000, 15);
+    buzzer.playNote(SILENT_NOTE, 250, 15);
+    buzzer.playNote(NOTE_G(5), 1000, 15);
+    buzzer.playNote(SILENT_NOTE, 250, 15);
+    buzzer.playNote(NOTE_E(5), 1000, 15);
     break;
     
   }

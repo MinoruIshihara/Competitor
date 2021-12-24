@@ -10,9 +10,15 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(
 );
 
 int startTime = 0;
+int currentTime = 0;
+int prevTime = 0;
+int deltaT = 0;
+
+float sumE = 0.0;
 int cycleNum = 0;
 int facingCount = 0;
 int waveCount = 0;
+float colisionDirect = 0.0;
 
 void setup() {
   Serial.begin(9600);
@@ -30,10 +36,11 @@ void setup() {
 }
 
 void loop() {
-  static int mode = BACK;
-  
-  static int prevTime = 0;
-  static int deltaT = 0;
+  #ifdef SERIAL_TEST
+  static int mode = STOP;
+  #else
+  static int mode = ORIGIN;
+  #endif
   
   static struct RGB_STRUCT rgb = {0, 0, 0};
   static float distance = 0.0;
@@ -41,8 +48,9 @@ void loop() {
   static float radian = 0.0;
   static float prevRadian = 0.0;
 
-  deltaT = millis() - prevTime;
-  prevTime = millis();
+  prevTime = currentTime;
+  currentTime = millis();
+  deltaT = currentTime - prevTime;
   
   rgb = getRGB();
   prevDistance = distance;
@@ -71,6 +79,10 @@ void loop() {
 
     case WAVE_R:
     mode = waveR(distance, radian);
+    break;
+
+    case TURN:
+    mode = turn(prevRadian, radian);
     break;
 
     case JUDGE_L:
@@ -312,7 +324,35 @@ int waveR(double distance, double angle){
   return WAVE_R;
 }
 
+int turn(float prevRadian, float radian){  
+  if( faceDirect(radian, -colisionDirect, deltaT) ){
+    startTime = currentTime;
+    return WAVE_R;
+  }
+  return TURN;
+}
+
 int stopMotor(){
   motors.setSpeeds(0, 0);
   return STOP;
+}
+
+bool faceDirect(float current, float obj, int deltaT){
+  float u;
+  float KP = 4.0;
+  float TIinv = 2/1000.0;
+  float e = obj-current;
+  if(e < -PI) e += 2 * PI;
+  if(e > PI) e -= 2 * PI;
+  if( -PI < e && e < PI / 2 ) {
+    u = KP * e;           // P制御
+  }
+  else {              // |e|<=45 の時はPI制御
+    sumE += e * TIinv * deltaT;
+    u = KP * ( e + sumE);   // PI 制御
+  }
+  if( u > PI ) u = PI;  // 飽和
+  if( u < -PI ) u = -PI; // 飽和
+  motors.setSpeeds(u * 50, -u * 50);
+  return ( 0.08 < e && e < 0.08 );
 }

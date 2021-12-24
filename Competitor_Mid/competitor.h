@@ -14,6 +14,7 @@
 //#define DEBUG_SONOR
 //#define DEBUG_MODE
 //#define DEBUG_MOTOR
+#define SERIAL_TEST
 
 #define BACK 0
 #define SEEK 1
@@ -29,6 +30,7 @@
 
 #define WAVE_L 11
 #define WAVE_R 12
+#define TURN 13
 
 #define MELODY_LENGTH 5
 #define THRES_DISTANCE 40
@@ -76,5 +78,7 @@ int push();
 
 int waveL(double distance, double angle);
 int waveR(double distance, double angle);
+
+bool faceDirect(float current, float obj, int deltaT);
 
 void playSound(int soundNum);

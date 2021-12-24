@@ -19,6 +19,7 @@ void initMagnetic()
   #endif
   button.waitForButton();
   angleOffset = getRadian();
+  playSound(0);
 }
 
 float getRadian(){  
@@ -26,7 +27,7 @@ float getRadian(){
   compass.read();
   int mx = map(compass.m.x,compass.m_min.x,compass.m_max.x,-1024,1023);
   int my = map(compass.m.y,compass.m_min.y,compass.m_max.y,-1024,1023);
-  float radian = -atan2((float)mx, (float)my) - angleOffset;
+  double radian = -atan2((double)mx, (double)my) - angleOffset;
 
   if(radian < - PI){
     radian =  2 * PI + radian;
@@ -36,16 +37,15 @@ float getRadian(){
   }
 
   #ifdef DEBUG_ANGLE
-  Serial.print("MX: ");
+  Serial.print("X: ");
   Serial.print(mx);
-  Serial.print(", MY: ");
+  Serial.print(", Y: ");
   Serial.print(my);
-  Serial.print(", Angle: ");
+  Serial.print(", Ang: ");
   Serial.print(radian);
-  Serial.println(compass.m.y);
   #endif
 
-  return radian;
+  return (float)radian;
 }
 
 void  calibrationMagnetic()
