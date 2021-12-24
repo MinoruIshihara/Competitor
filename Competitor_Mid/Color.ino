@@ -20,9 +20,7 @@ int initColorSensor(){
     button.waitForButton();
     calibrationRGB();
   #endif
-  button.waitForButton();
   playSound(0);
-  initRGB = getRGB();
 }
 
 struct RGB_STRUCT getRGB(){

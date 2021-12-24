@@ -20,6 +20,8 @@ int facingCount = 0;
 int rotateNum = 0;
 int moveCount = 0;
 float rotateEndDirect = - PI / 2;
+float revertDirect = PI / 2;
+int originalMode = SEEK;
 
 void setup() {
   Serial.begin(9600);
@@ -66,6 +68,10 @@ void loop() {
   #endif
 
   switch(mode){
+    case RUN:
+    mode = runFront(radian);
+    break;
+    
     case BACK:
     mode = backRun();
     break;
@@ -107,7 +113,15 @@ void loop() {
     break;
     
     case TAKE:
-    mode = takeCup(distance);
+    mode = takeCup(rgb, distance, radian);
+    break;
+
+    case REVERT_FACE:
+    mode = revertFace(radian);
+    break;
+    
+    case REVERT_RUN:
+    mode = revertRun();
     break;
     
     case BRING:
@@ -126,22 +140,41 @@ void loop() {
     mode = stopMotor();
     break;
   }
-
-  #ifdef DEBUG_MOTOR
-  Serial.print(", Right: ");
-  Serial.print(motors.getRightSpeed());
-  Serial.print(", Left: ");
-  Serial.print(motors.getLeftSpeed());
-  Serial.print(", ");
-  #endif
   
   if(serialEvent()){
     sendAll(rgb, distance, radian, motors.getLeftSpeed(), motors.getRightSpeed(), mode);
   }
+
   #ifdef DEBUG_MODE
   Serial.println("");
   #endif
 }
+
+//======================FACE TO ORIGINAL DIRECT======================
+
+int faceOrigin(float prevRadian, float radian){
+  float originDirect = cycleNum == 0 ? - PI * 7 / 9 : 0;
+  if( faceDirect(radian, originDirect, deltaT, 0) ){
+    startTime = currentTime;
+    rotateNum = 0;
+    rotateEndDirect = - PI / 2;
+    return cycleNum == 0 ? RUN : BACK;
+  }
+  return ORIGIN;
+}
+
+//====================RUN FORWARD=====================
+
+int runFront(float distance){  
+  motors.setSpeeds(300, 300);
+  if(millis() - startTime > RUN_TIME){
+    startTime = millis();
+    return SEEK;
+  }
+  return RUN;
+}
+
+//====================RUN BACKWARD=====================
 
 int backRun(){
   motors.setSpeeds(-400, -400);
@@ -151,6 +184,8 @@ int backRun(){
   }
   return BACK;
 }
+
+//==============ROTATE AND SEARCH A CUP===============
 
 int seekCup(float distance, float prevRadian, float radian){
   if(distance < 40 ){
@@ -173,14 +208,18 @@ int seekCup(float distance, float prevRadian, float radian){
   return SEEK;
 }
 
+//===========FACE TO THE NEXT SEARCHING SIRCLE============
+
 int faceNext(float prevRadian, float radian){
-  if( faceDirect(radian, rotateEndDirect, deltaT) ){
+  if( faceDirect(radian, rotateEndDirect, deltaT, 0) ){
     startTime = millis();
     rotateNum++;
     return NEXT;
   }
   return FACE_NEXT;
 }
+
+//================GO TO THE NEXT SEARCHING================
 
 int goNext(RGB_STRUCT rgb){
   if( identify_color( rgb, BLACK_RGB ) ){
@@ -199,8 +238,10 @@ int goNext(RGB_STRUCT rgb){
   return NEXT;
 }
 
+//======================FACE TO LOWER======================
+
 int turnFaceDown(float prevRadian, float radian){
-  if( faceDirect(radian, 0, deltaT) ){
+  if( faceDirect(radian, 0, deltaT, 0) ){
     startTime = millis();
     rotateNum++;
     return TURN_GO;
@@ -208,14 +249,18 @@ int turnFaceDown(float prevRadian, float radian){
   return TURN_DOWN;
 }
 
+//==================GO DOWN ON THE LINE====================
+
 int turnGoDown(float radian){
-  motors.setSpeeds(100, 100);
+  faceDirect(radian, rotateEndDirect / 8 , deltaT, 150);
   if(currentTime - startTime > 2000){
     startTime = currentTime;
     return FACE_NEXT;
   }
   return TURN_GO;
 }
+
+//=========THE CUP IS IN FRONT OF THE ROBOT OR NOT=========
 
 int judge(float distance){
   facingCount = 0;
@@ -229,6 +274,8 @@ int judge(float distance){
   }
 }
 
+//=================TURN LEFT AND SEARCH CUP=================
+
 int faceL(float distance, float prevDistance, float radian){    
   if(facingCount > 4){
     startTime = currentTime;
@@ -238,7 +285,7 @@ int faceL(float distance, float prevDistance, float radian){
   if(distance - prevDistance > 0 && distance < 40){
     startTime = currentTime;
     moveCount = 0;
-    return CHECK;
+    return TAKE;
   }
   motors.setSpeeds(-90, 90);
   
@@ -251,6 +298,8 @@ int faceL(float distance, float prevDistance, float radian){
   return FACE_L; 
 }
 
+//=================TURN RIGHT AND SEARCH CUP=================
+
 int faceR(float distance, float prevDistance, float radian){
   if(facingCount > 4){
     startTime = currentTime;
@@ -260,7 +309,7 @@ int faceR(float distance, float prevDistance, float radian){
   if(distance - prevDistance > 0 && distance < 40){
     startTime = currentTime;
     moveCount = 0;
-    return CHECK;
+    return TAKE;
   }
   motors.setSpeeds(90, -90);
   
@@ -272,6 +321,8 @@ int faceR(float distance, float prevDistance, float radian){
   
   return FACE_R; 
 }
+
+//======================JUDGE ROBOT OR CUP======================
 
 int moveCheck(float prevDistance, float distance){
   motors.setSpeeds(0, 0);
@@ -285,19 +336,56 @@ int moveCheck(float prevDistance, float distance){
   return CHECK;
 }
 
-int takeCup(float distance){
+//===========================TAKE CUP===========================
+
+int takeCup(RGB_STRUCT rgb, float distance, float radian){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    playSound(1);
+    startTime = currentTime;
+    revertDirect = radian < 0 ? PI / 2 : - PI / 2;
+    originalMode = SEEK;
+    return REVERT_FACE;
+  }
+  
   int power = distance * 5 + 75;
   motors.setSpeeds(power, power);
-  if(distance < 3.5){
+  if(distance < 3.4){
     motors.setSpeeds(0, 0);
     delay(300);
     startTime = currentTime;
+    playSound(1);
     return BRING;
   }
   return TAKE;
 }
 
+//===================REVERT IF ON THE BLCK LINE===================
+
+int revertFace(float radian){
+  if( faceDirect(radian, revertDirect, deltaT, 0) ){
+    startTime = millis();
+    return REVERT_RUN;
+  }
+  return REVERT_FACE;
+}
+
+int revertRun(){
+  motors.setSpeeds(200, 200);
+  if(currentTime - startTime > 1500)return originalMode;  
+  return REVERT_RUN;
+}
+
+//=====================BRING CUP TO THE BASE=====================
+
 int bringCup(float radian, RGB_STRUCT rgb){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    playSound(1);
+    startTime = currentTime;
+    revertDirect = radian < 0 ? PI / 2 : - PI / 2;
+    originalMode = BRING;
+    return REVERT_FACE;
+  }
+  
   if(-0.1 < radian && radian < 0.1){
     motors.setSpeeds(200, 200);
   }
@@ -310,17 +398,19 @@ int bringCup(float radian, RGB_STRUCT rgb){
   }
   
   if( identify_color( rgb, initRGB ) ){
-    startTime = currentTime;
+    startTime = millis();
     return PUSH;
   }
   return BRING;
 }
 
+//======================PUSH AND PUT IN THE CUP======================
+
 int push(){
-  if(currentTime - startTime < 1000){
+  if(currentTime - startTime < 500){
     motors.setSpeeds(100, 100);
   }
-  else if(currentTime - startTime < 2000){
+  else if(currentTime - startTime < 1000){
     motors.setSpeeds(-100, -100);
   }
   else {
@@ -331,22 +421,16 @@ int push(){
   return PUSH;
 }
 
+//======================JUST STOP======================
+
 int stopMotor(){
   motors.setSpeeds(0, 0);
   return STOP;
 }
 
-int faceOrigin(float prevRadian, float radian){
-  if( faceDirect(radian, 0, deltaT) ){
-    startTime = currentTime;
-    rotateNum = 0;
-    rotateEndDirect = - PI / 2;
-    return BACK;
-  }
-  return ORIGIN;
-}
+//==================FACE SPECIFIC DIRECT==================
 
-bool faceDirect(float current, float obj, int deltaT){
+bool faceDirect(float current, float obj, int deltaT,int offsetSpeed){
   float u;
   float KP = 4.0;
   float TIinv = 2/1000.0;
@@ -369,9 +453,11 @@ bool faceDirect(float current, float obj, int deltaT){
   }
   if( u > PI ) u = PI;  // 飽和
   if( u < -PI ) u = -PI; // 飽和
-  motors.setSpeeds(u * 50, -u * 50);
+  motors.setSpeeds(u * 50 + offsetSpeed, -u * 50 + offsetSpeed);
   return ( -0.07 < e && e < 0.07 );
 }
+
+//================FACE SPECIFIC DIRECT QUICK================
 
 bool faceDirectFast(float prev, float current, float obj){
   float u;

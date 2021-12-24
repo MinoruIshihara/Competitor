@@ -12,30 +12,34 @@
 //#define DEBUG_ANGLE
 //#define DEBUG_ACCEL
 //#define DEBUG_SONOR
-//#define DEBUG_MODE
+#define DEBUG_MODE
 //#define DEBUG_MOTOR
-#define SERIAL_TEST
+//#define SERIAL_TEST
 
-#define BACK 0
-#define SEEK 1
-#define JUDGE_R 2
-#define JUDGE_L 3
-#define FACE_R 4
-#define FACE_L 5
-#define TAKE 6
-#define NEXT 7
-#define STOP 8
-#define BRING 9
-#define PUSH 10
+#define ORIGIN 0
+#define RUN 1
+#define BACK 2
+#define SEEK 3
+#define JUDGE_R 4
+#define JUDGE_L 5
+#define FACE_R 6
+#define FACE_L 7
+#define TAKE 8
+#define REVERT_FACE 9
+#define REVERT_RUN 10
+#define NEXT 11
+#define STOP 12
+#define BRING 13
+#define PUSH 14
+#define WAVE_L 15
+#define WAVE_R 16
 
-#define WAVE_L 11
-#define WAVE_R 12
-#define TURN 13
-
+#define RUN_TIME 2000
 #define MELODY_LENGTH 5
 #define THRES_DISTANCE 40
-#define RED_RGB 144, 16, 32
-#define BLUE_RGB 40, 80, 110
+#define RED_RGB {144, 16, 32}
+#define BLUE_RGB {40, 80, 110}
+#define BLACK_RGB {10, 10, 10}
 
 struct RGB_STRUCT {
   unsigned char r;
@@ -64,8 +68,10 @@ double getDistance();
 void initMagnetic();
 double getRadian();
 
+int faceOrigin(float prevRadian, float radian);
+int runFront(float distance, int runTime, int L, int R);
 int seekCup(double distance, double prevRadian, double angle);
-int takeCup(double distance);
+int takeCup(RGB_STRUCT rgb, float distance, float radian);
 int nextCup(double distance, double radian);
 int stopMotor();
 int backRun();
@@ -79,6 +85,6 @@ int push();
 int waveL(double distance, double angle);
 int waveR(double distance, double angle);
 
-bool faceDirect(float current, float obj, int deltaT);
+bool faceDirect(float current, float obj, int deltaT, int offsetSpeed);
 
 void playSound(int soundNum);

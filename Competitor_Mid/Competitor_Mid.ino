@@ -19,6 +19,9 @@ int cycleNum = 0;
 int facingCount = 0;
 int waveCount = 0;
 float colisionDirect = 0.0;
+float waveDirect = PI / 2;
+float revertDirect = 0;
+int originalMode = SEEK;
 
 void setup() {
   Serial.begin(9600);
@@ -39,7 +42,7 @@ void loop() {
   #ifdef SERIAL_TEST
   static int mode = STOP;
   #else
-  static int mode = ORIGIN;
+  static int mode = RUN;
   #endif
   
   static struct RGB_STRUCT rgb = {0, 0, 0};
@@ -65,6 +68,14 @@ void loop() {
   #endif
 
   switch(mode){
+    case ORIGIN:
+    mode = faceOrigin(prevRadian, radian);
+    break;
+
+    case RUN:
+    mode = runFront(distance);
+    break;
+    
     case BACK:
     mode = backRun();
     break;
@@ -74,15 +85,11 @@ void loop() {
     break;
 
     case WAVE_L:
-    mode = waveL(distance, radian);
+    mode = waveL(distance, radian, rgb);
     break;
 
     case WAVE_R:
-    mode = waveR(distance, radian);
-    break;
-
-    case TURN:
-    mode = turn(prevRadian, radian);
+    mode = waveR(distance, radian, rgb);
     break;
 
     case JUDGE_L:
@@ -102,11 +109,15 @@ void loop() {
     break;
     
     case TAKE:
-    mode = takeCup(distance);
+    mode = takeCup(rgb, distance, radian);
     break;
 
-    case NEXT:
-    mode = nextCup(distance, radian);
+    case REVERT_FACE:
+    mode = revertFace(radian);
+    break;
+    
+    case REVERT_RUN:
+    mode = revertRun();
     break;
 
     case STOP:
@@ -138,6 +149,30 @@ void loop() {
   #endif
 }
 
+//======================FACE TO ORIGINAL DIRECT======================
+
+int faceOrigin(float prevRadian, float radian){
+  float direct = cycleNum == 0? -PI : 0;
+  if( faceDirect(radian, direct, deltaT, 0) ){
+    startTime = currentTime;
+    return cycleNum == 0? RUN : BACK;
+  }
+  return ORIGIN;
+}
+
+//====================RUN FORWARD=====================
+
+int runFront(float distance){  
+  motors.setSpeeds(400, 400);
+  if(millis() - startTime > RUN_TIME){
+    startTime = millis();
+    return SEEK;
+  }
+  return RUN;
+}
+
+//====================RUN BACKWARD=====================
+
 int backRun(){
   motors.setSpeeds(-400, -400);
   if(millis() - startTime > (2000 - (cycleNum / 2) * 500)){
@@ -146,6 +181,8 @@ int backRun(){
   }
   return BACK;
 }
+
+//==============ROTATE AND SEARCH A CUP===============
 
 int seekCup(double distance, double prevRadian, double radian){  
   if(distance < 40 ){
@@ -165,6 +202,8 @@ int seekCup(double distance, double prevRadian, double radian){
   return SEEK;
 }
 
+//=========THE CUP IS IN FRONT OF THE ROBOT OR NOT=========
+
 int judgeL(double distance){
   facingCount = 0;
   if(distance < THRES_DISTANCE){
@@ -177,6 +216,8 @@ int judgeL(double distance){
   }
 }
 
+//=========THE CUP IS IN FRONT OF THE ROBOT OR NOT=========
+
 int judgeR(double distance){
   facingCount = 0;
   if(distance < THRES_DISTANCE){
@@ -188,6 +229,8 @@ int judgeR(double distance){
     return FACE_L;
   }
 }
+
+//=================TURN LEFT AND SEARCH CUP=================
 
 int faceL(double distance, double prevDistance, double radian){    
   if(facingCount > 4){
@@ -210,6 +253,8 @@ int faceL(double distance, double prevDistance, double radian){
   return FACE_L; 
 }
 
+//=================TURN RIGHT AND SEARCH CUP=================
+
 int faceR(double distance, double prevDistance, double radian){
   if(facingCount > 4){
     startTime = millis();
@@ -231,28 +276,49 @@ int faceR(double distance, double prevDistance, double radian){
   return FACE_R; 
 }
 
-int takeCup(float distance){
+//===========================TAKE CUP===========================
+
+int takeCup(RGB_STRUCT rgb, float distance, float radian){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    playSound(1);
+    startTime = currentTime;
+    revertDirect = radian < 0 ? PI / 2 : - PI / 2;
+    originalMode = SEEK;
+    return REVERT_FACE;
+  }
+  
   int power = distance * 5 + 75;
   motors.setSpeeds(power, power);
-  if(distance < 3.5){
+  if(distance < 4){
     motors.setSpeeds(0, 0);
     delay(300);
     startTime = millis();
+    playSound(1);
     return BRING;
   }
   return TAKE;
 }
 
+//=====================BRING CUP TO THE BASE=====================
+
 int bringCup(double radian, RGB_STRUCT rgb){
-  if(abs(radian) < 0.1){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    playSound(1);
+    startTime = currentTime;
+    revertDirect = radian < 0 ? PI / 2 : - PI / 2;
+    originalMode = BRING;
+    return REVERT_FACE;
+  }
+  
+  if(-0.1 < radian && radian < 0.1){
     motors.setSpeeds(200, 200);
   }
-  else if(abs(radian) > 1.5){
-    motors.setSpeeds( -radian * 60 + 40, radian * 60 + 40);
-  }
-  else{
+  else if(-1.5 < radian && radian < 1.5){
     if(radian < 0)motors.setSpeeds( -(radian - 0.4) * 150 , (radian - 0.4) * 100 );
     else motors.setSpeeds( -(radian + 0.4) * 100 , (radian + 0.4) * 150 );
+  }
+  else{
+    motors.setSpeeds( -radian * 60 + 40, radian * 60 + 40);
   }
   
   if( identify_color( rgb, initRGB ) ){
@@ -262,37 +328,50 @@ int bringCup(double radian, RGB_STRUCT rgb){
   return BRING;
 }
 
-int push(){
-  motors.setSpeeds(100, 100);
-  if(millis() - startTime > 1000){
+//===================REVERT IF ON THE BLCK LINE===================
+
+int revertFace(float radian){
+  if( faceDirect(radian, revertDirect, deltaT, 0) ){
     startTime = millis();
+    return REVERT_RUN;
+  }
+  return REVERT_FACE;
+}
+
+int revertRun(){
+  motors.setSpeeds(200, 200);
+  if(currentTime - startTime > 1500)return originalMode;  
+  return REVERT_RUN;
+}
+
+//======================PUSH AND PUT IN THE CUP======================
+
+int push(){
+  if(currentTime - startTime < 500){
+    motors.setSpeeds(100, 100);
+  }
+  else if(currentTime - startTime < 1000){
+    motors.setSpeeds(-100, -100);
+  }
+  else {
+    startTime = currentTime;
     cycleNum ++;
-    return BACK;
+    return ORIGIN;
   }
   return PUSH;
 }
 
-int nextCup(double distance, double radian){
-  if(abs(radian) < 0.1){
-    motors.setSpeeds(200, 200);
-  }
-  else if(abs(radian) > 1.5){
-    motors.setSpeeds(-radian * 60 , radian * 60 );
-  }
-  else{
-    motors.setSpeeds( -radian * 160 + 80, radian * 160 + 80);
-  }
-  if(millis() - startTime > 3000){
-    startTime = millis();
-    return SEEK;
-  }
-  return NEXT;
-}
+//==================WAVING RUN (LEFT)==================
 
-int waveL(double distance, double angle){
-  motors.setSpeeds(80, 150);
-
-  if(millis() - startTime > 1500){
+int waveL(double distance, double angle, struct RGB_STRUCT rgb){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    waveDirect = - waveDirect;
+    revertDirect = waveDirect;
+    originalMode = WAVE_L;
+    return REVERT_FACE;
+  }
+  
+  if( faceDirect(angle, waveDirect * 0.5, deltaT, 150) ){
     waveCount ++;
     startTime = millis();
     return WAVE_R;
@@ -307,9 +386,17 @@ int waveL(double distance, double angle){
   return WAVE_L;
 }
 
-int waveR(double distance, double angle){
-  motors.setSpeeds(150, 80);
-  if(millis() - startTime > 1500){
+//==================WAVING RUN (RIGHT)==================
+
+int waveR(double distance, double angle, struct RGB_STRUCT rgb){
+  if( identify_color( rgb, BLACK_RGB ) ){
+    waveDirect = - waveDirect;
+    revertDirect = waveDirect;
+    originalMode = WAVE_R;
+    return REVERT_FACE;
+  }
+  
+  if( faceDirect(angle, waveDirect * 1.5, deltaT, 150) ){
     waveCount ++;
     startTime = millis();
     return WAVE_L;
@@ -324,20 +411,16 @@ int waveR(double distance, double angle){
   return WAVE_R;
 }
 
-int turn(float prevRadian, float radian){  
-  if( faceDirect(radian, -colisionDirect, deltaT) ){
-    startTime = currentTime;
-    return WAVE_R;
-  }
-  return TURN;
-}
+//======================JUST STOP======================
 
 int stopMotor(){
   motors.setSpeeds(0, 0);
   return STOP;
 }
 
-bool faceDirect(float current, float obj, int deltaT){
+//=================FACE SPECIFIC DIRECT=================
+
+bool faceDirect(float current, float obj, int deltaT,int offsetSpeed){
   float u;
   float KP = 4.0;
   float TIinv = 2/1000.0;
@@ -351,8 +434,15 @@ bool faceDirect(float current, float obj, int deltaT){
     sumE += e * TIinv * deltaT;
     u = KP * ( e + sumE);   // PI 制御
   }
+  Serial.println(e);
+  if(e > 0){
+    u = KP * (e + 0.4);
+  }
+  else{
+    u = KP * (e - 0.4);
+  }
   if( u > PI ) u = PI;  // 飽和
   if( u < -PI ) u = -PI; // 飽和
-  motors.setSpeeds(u * 50, -u * 50);
-  return ( 0.08 < e && e < 0.08 );
+  motors.setSpeeds(u * 50 + offsetSpeed, -u * 50 + offsetSpeed);
+  return ( -0.07 < e && e < 0.07 );
 }

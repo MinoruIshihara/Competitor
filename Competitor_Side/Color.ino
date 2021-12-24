@@ -21,7 +21,6 @@ int initColorSensor(){
     calibrationRGB();
   #endif
   playSound(0);
-  initRGB = getRGB();
 }
 
 struct RGB_STRUCT getRGB(){

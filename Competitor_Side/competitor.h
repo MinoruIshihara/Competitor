@@ -15,22 +15,26 @@
 //#define DEBUG_MOTOR
 //#define SERIAL_TEST
 
-#define BACK 0
-#define SEEK 1
-#define FACE_NEXT 2
-#define NEXT 3
-#define TURN_DOWN 4
-#define TURN_GO 5
-#define JUDGE 7
-#define FACE_R 8
-#define FACE_L 9
-#define CHECK 10
-#define TAKE 11
-#define BRING 12
-#define PUSH 13
-#define ORIGIN 14 
+#define ORIGIN 0
+#define RUN 1
+#define BACK 2
+#define SEEK 3
+#define FACE_NEXT 4
+#define NEXT 5
+#define TURN_DOWN 6
+#define TURN_GO 7
+#define JUDGE 8
+#define FACE_R 9
+#define FACE_L 10
+#define CHECK 11
+#define TAKE 12
+#define BRING 13
+#define PUSH 14
 #define STOP 15
+#define REVERT_FACE 16
+#define REVERT_RUN 17
 
+#define RUN_TIME 1500
 #define THRES_DISTANCE 40
 #define CHECK_COUNT 3
 #define RED_RGB {144, 16, 32}
@@ -67,6 +71,7 @@ float getNextDirect(int n);
 int getBackOrFront();
 
 int backRun();
+int runFront(float distance, int runTime, int L, int R);
 int seekCup(float distance, float prevDistance, float angle);
 int faceNext(float prevRadian, float radian);
 int goNext(RGB_STRUCT rgb);
@@ -76,13 +81,13 @@ int judge(float distance);
 int faceCupR(float distance, float prevDistance, float radian);
 int faceCupL(float distance, float prevDistance, float radian);
 int moveCheck(float prevDistance, float dintance);
-int takeCup(float distance);
+int takeCup(RGB_STRUCT rgb, float distance, float radian);
 int bringCup(float radian, RGB_STRUCT rgb);
 int push();
 int faceOrigin(float prevRadian, float radian);
 int stopMotor();
 
-bool faceDirect(float current, float obj, int deltaT);
+bool faceDirect(float current, float obj, int deltaT,int offsetSpeed);
 bool faceDirectFast(float prev, float current, float obj);
 
 void playSound(int soundNum);

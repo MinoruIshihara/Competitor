@@ -19,6 +19,7 @@ void initMagnetic()
   #endif
   button.waitForButton();
   angleOffset = getRadian();
+  initRGB = getRGB();
   playSound(0);
 }
 
